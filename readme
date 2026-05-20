@@ -1,0 +1,318 @@
+# 🤖 AI Enterprise Assistant Nội Bộ
+
+Hệ thống AI Assistant nội bộ dành cho doanh nghiệp/cơ quan, hỗ trợ:
+
+* 📄 Tra cứu tài liệu nội bộ
+* 🧠 AI RAG (Retrieval-Augmented Generation)
+* 🔍 Hybrid Search (Vector + BM25)
+* 📚 OCR PDF Scan
+* 🔒 Role-Based Access Control (RBAC)
+* ⚡ Realtime Document Ingestion
+* 💬 Conversation Memory
+* 🌊 Streaming Response
+* 📤 Upload tài liệu realtime
+* 🐳 Docker Deployment
+
+---
+
+# 🚀 Kiến trúc hệ thống
+
+```text id="jlwm84"
+Streamlit UI
+      ↓
+FastAPI API
+      ↓
+AI Agent Layer
+      ↓
+Hybrid Retrieval
+(Vector + BM25)
+      ↓
+ChromaDB
+      ↓
+Local LLM (Ollama / Qwen)
+```
+
+---
+
+# 📦 Công nghệ sử dụng
+
+## Backend
+
+* FastAPI
+* Streamlit
+* LangChain
+* CrewAI
+* ChromaDB
+* BM25
+* Watchdog
+* SQLite
+
+## AI / NLP
+
+* Ollama
+* Qwen 2.5
+* Sentence Transformers
+* OCR PDF
+
+## DevOps
+
+* Docker
+* Docker Compose
+
+---
+
+# 🧠 Các tính năng chính
+
+## ✅ AI RAG
+
+* Vector Search
+* Hybrid Search
+* Context Injection
+* Source Citation
+
+## ✅ Security
+
+* JWT Authentication
+* RBAC Retrieval
+* Department Filtering
+
+## ✅ Realtime Ingestion
+
+* Auto Watcher
+* Auto Indexing
+* Retry Queue
+* Persistent Queue
+
+## ✅ Upload System
+
+* Upload API
+* Streamlit Upload UI
+* Realtime Searchable
+
+## ✅ Conversation
+
+* Memory Window
+* Contextual Follow-up
+* Streaming Response
+
+## ✅ Monitoring
+
+* Queue Stats
+* Database Stats
+* Failed Files Tracking
+
+---
+
+# 📂 Cấu trúc thư mục
+
+```text id="jlwm85"
+project/
+│
+├── api/
+├── core/
+├── database/
+├── styles/
+├── utils/
+│
+├── chroma_db/
+├── data/
+│   ├── documents/
+│   ├── uploads/
+│   └── processed/
+│
+├── logs/
+│
+├── app.py
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+```
+
+---
+
+# 🚀 Setup
+
+## 1️⃣ Clone project
+
+```bash id="jlwm86"
+git clone <repo_url>
+cd project
+```
+
+---
+
+## 2️⃣ Install Ollama
+
+Download:
+https://ollama.com
+
+---
+
+## 3️⃣ Pull model
+
+```bash id="jlwm87"
+ollama pull qwen2.5:7b
+```
+
+---
+
+## 4️⃣ (Optional) Custom model storage
+
+Windows:
+
+```bash id="jlwm88"
+setx OLLAMA_MODELS "L:\Downloads\OllamaModels"
+```
+
+---
+
+## 5️⃣ Run Docker
+
+```bash id="jlwm89"
+docker compose up
+```
+
+---
+
+# 🌐 Truy cập
+
+## Streamlit UI
+
+```text id="jlwm90"
+http://localhost:8501
+```
+
+## FastAPI Docs
+
+```text id="jlwm91"
+http://localhost:8000/docs
+```
+
+---
+
+# 📤 Upload tài liệu
+
+Hệ thống hỗ trợ:
+
+* PDF
+* DOCX
+* TXT
+
+Sau khi upload:
+
+* auto ingest
+* auto chunk
+* auto embedding
+* searchable realtime
+
+---
+
+# 🔍 Hybrid Search
+
+Hệ thống sử dụng:
+
+* Vector Search (semantic)
+* BM25 Search (keyword)
+
+Kết hợp:
+
+* độ chính xác cao
+* retrieval ổn định hơn
+
+---
+
+# 🔒 RBAC Retrieval
+
+Mỗi tài liệu có:
+
+* metadata department
+* permission filtering
+
+Ví dụ:
+
+* HR chỉ xem HR
+* Finance chỉ xem Finance
+* Admin xem tất cả
+
+---
+
+# 💬 Conversation Memory
+
+AI hỗ trợ:
+
+* follow-up question
+* contextual conversation
+* memory window
+
+---
+
+# 🌊 Streaming Response
+
+Hệ thống hỗ trợ:
+
+* realtime streaming
+* ChatGPT-like UX
+
+---
+
+# 📚 Citation System
+
+AI trả lời có:
+
+* source filename
+* document traceability
+
+---
+
+# 🐳 Docker Development Mode
+
+Project hỗ trợ:
+
+* hot reload
+* mounted source code
+* realtime update
+
+---
+
+# 🚀 Roadmap
+
+## Phase 1 — Core AI System ✅
+
+* RAG
+* OCR
+* Hybrid Search
+* RBAC
+* Upload
+* Queue
+* Streaming
+* Memory
+
+## Phase 2 — Polish & Demo 🚧
+
+* UI polish
+* README
+* Architecture diagram
+* Demo dataset
+
+## Phase 3 — Production Infra
+
+* PostgreSQL
+* Redis
+* Celery
+* Nginx
+* HTTPS
+
+## Phase 4 — Advanced AI
+
+* Multi-agent
+* Tool Calling
+* Autonomous Workflow
+
+---
+
+# 📌 Lưu ý
+
+* Không commit AI models lên Git
+* Models được quản lý bởi Ollama
+* Source code portable
+* Local LLM cần RAM tương đối lớn
