@@ -9,6 +9,18 @@ from core.config import (
     EMBEDDING_MODEL
 )
 
+from core.ingestion_queue import (
+    ingestion_queue
+)
+
+from core.failed_queue import (
+    failed_files
+)
+
+from core.processing_state import (
+    processing_files
+)
+
 from utils.logger import logger
 
 # ===================================================
@@ -99,7 +111,16 @@ def get_system_info():
 
         "database_size_mb": (
             get_database_size_mb()
-        )
+        ),
+
+        "queue_size":
+        ingestion_queue.qsize(),
+
+        "processing_files":
+        len(processing_files),
+
+        "failed_files":
+        len(failed_files),
     }
 
     logger.info(
@@ -132,6 +153,15 @@ def format_system_info():
 
 🗂️ Kích thước database:
 {info["database_size_mb"]} MB
+
+📥 Queue size:
+{info["queue_size"]}
+
+⚙️ Processing files:
+{info["processing_files"]}
+
+❌ Failed files:
+{info["failed_files"]}
 """
 
     return formatted

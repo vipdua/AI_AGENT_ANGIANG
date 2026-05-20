@@ -84,31 +84,60 @@ def load_single_file(file_path):
 
     try:
 
+        # ===================================================
+        # 📄 LOAD FILE
+        # ===================================================
         # TXT
         if suffix == ".txt":
 
-            return load_txt(str(file_path))
+            docs = load_txt(str(file_path))
 
         # PDF
         elif suffix == ".pdf":
 
-            return load_pdf(str(file_path))
+            docs = load_pdf(str(file_path))
 
         # DOCX
         elif suffix == ".docx":
 
-            return load_docx(str(file_path))
+            docs = load_docx(str(file_path))
 
         else:
 
-            print(f"❌ Không hỗ trợ file: {file_path.name}")
+            print(
+                f"❌ Không hỗ trợ file: "
+                f"{file_path.name}"
+            )
 
             return []
+
+        # ===================================================
+        # 📋 CREATE METADATA
+        # ===================================================
+        metadata = create_document_metadata(
+            file_path
+        )
+
+        metadata["department"] = (
+            detect_department(
+                file_path.name
+            )
+        )
+
+        # ===================================================
+        # 📦 ADD METADATA
+        # ===================================================
+        for doc in docs:
+
+            doc.metadata.update(metadata)
+
+        return docs
 
     except Exception as e:
 
         logger.error(
-            f"Lỗi đọc file {file_path.name}: {e}"
+            f"Lỗi đọc file "
+            f"{file_path.name}: {e}"
         )
 
         return []
@@ -135,23 +164,6 @@ def load_documents_from_directory(directory_path):
             logger.info(f"📄 Đang đọc: {file_path.name}")
 
             docs = load_single_file(file_path)
-
-            # ===================================================
-            # ADD METADATA
-            # ===================================================
-            metadata = create_document_metadata(
-                file_path
-            )
-
-            metadata["department"] = (
-                detect_department(
-                    file_path.name
-                )
-            )
-                        
-            for doc in docs:
-
-                doc.metadata.update(metadata)
 
             all_documents.extend(docs)
 

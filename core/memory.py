@@ -35,15 +35,27 @@ class ConversationMemory:
     # ===================================================
     # 📜 GET HISTORY
     # ===================================================
-    def get_history(self):
+    def get_history(
+
+        self,
+
+        limit=10
+    ):
 
         history = []
 
-        for msg in self.messages:
+        recent_messages = list(
+            self.messages
+        )[-limit:]
+
+        for msg in recent_messages:
+
+            role = msg["role"]
+
+            content = msg["content"]
 
             history.append(
-                f"{msg['role']}: "
-                f"{msg['content']}"
+                f"{role}: {content}"
             )
 
         return "\n".join(history)
@@ -54,6 +66,13 @@ class ConversationMemory:
     def clear(self):
 
         self.messages.clear()
+
+    # ===================================================
+    # 📊 MEMORY SIZE
+    # ===================================================
+    def size(self):
+
+        return len(self.messages)
 
 # ===================================================
 # 👥 USER MEMORIES

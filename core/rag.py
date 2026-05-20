@@ -169,10 +169,27 @@ def hybrid_search(
     # ===================================================
     # 🧠 VECTOR SEARCH
     # ===================================================
-    retriever = create_retriever()
+    vectorstore = load_vector_database()
 
-    vector_results = retriever.invoke(
-        query
+    search_filter = None
+
+    if user_role != "admin":
+
+        search_filter = {
+
+            "department":
+            user_role
+        }
+
+    vector_results = (
+        vectorstore.similarity_search(
+
+            query,
+
+            k=RETRIEVAL_K,
+
+            filter=search_filter
+        )
     )
 
     # ===================================================
@@ -184,7 +201,17 @@ def hybrid_search(
 
         keyword_results = (
             bm25_search_engine.search(
-                query
+
+                query,
+
+                top_k=RETRIEVAL_K,
+
+                department=(
+
+                    None
+                    if user_role == "admin"
+                    else user_role
+                )
             )
         )
 
@@ -238,3 +265,59 @@ def hybrid_search(
     )
 
     return reranked_results[:3]
+
+# ===================================================
+# 🗑️ DELETE DOCUMENTS BY SOURCE
+# ===================================================
+def delete_document_by_source(
+
+    source
+):
+
+    try:
+
+        vector_store.delete(
+
+            where={
+
+                "source": source
+            }
+        )
+
+        logger.info(
+            f"🗑️ Deleted old vectors: "
+            f"{source}"
+        )
+
+    except Exception as e:
+
+        logger.error(
+            f"Delete vector error: {e}"
+        )
+
+# ===================================================
+# 📚 BUILD CONTEXT
+# ===================================================
+def build_context(documents):
+
+    context = ""
+
+    for doc in documents:
+
+        source = doc.metadata.get(
+
+            "filename",
+
+            "Unknown"
+        )
+
+        context += f"""
+
+📄 SOURCE:
+{source}
+
+{doc.page_content}
+
+"""
+
+    return context

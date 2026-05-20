@@ -58,6 +58,20 @@ from slowapi.middleware import (
 
 from fastapi import Request
 
+from fastapi.responses import (
+    StreamingResponse
+)
+
+import time
+
+from fastapi import UploadFile, File
+
+from core.config import (
+    DOCUMENTS_DIR
+)
+
+from utils.logger import logger
+
 # ===================================================
 # 🚀 FASTAPI APP
 # ===================================================
@@ -173,6 +187,17 @@ def login(
     }
 
 # ===================================================
+# 🌊 STREAM RESPONSE
+# ===================================================
+def stream_text(text):
+
+    for word in text.split():
+
+        yield f"data: {word} \n\n"
+
+        time.sleep(0.03)
+
+# ===================================================
 # 💬 CHAT API
 # ===================================================
 @app.post("/chat")
@@ -181,20 +206,28 @@ def chat( request: Request, data: ChatRequest, current_user=Depends( get_current
 
     if not current_user:
 
-        if not require_role(
+        return {
 
-            current_user,
+            "success": False,
 
-            ["admin"]
-        ):
+            "message":
+            "Unauthorized"
+        }
 
-            return {
+    if not require_role(
 
-                "success": False,
+        current_user,
 
-                "message":
-                "Unauthorized"
-            }
+        ["admin"]
+    ):
+
+        return {
+
+            "success": False,
+
+            "message":
+            "Forbidden"
+        }
 
     response = ask_ai(
 
@@ -205,12 +238,12 @@ def chat( request: Request, data: ChatRequest, current_user=Depends( get_current
         user_role=data.user_role
     )
 
-    return {
+    return StreamingResponse(
 
-        "success": True,
+        stream_text(response),
 
-        "response": response
-    }
+        media_type="text/event-stream"
+    )
 
 # ===================================================
 # 📊 SYSTEM STATS API
@@ -342,4 +375,35 @@ def create_new_user(request: Request, data: CreateUserRequest, current_user=Depe
 
         "message":
         "Tạo user thành công"
+    }
+
+# ===================================================
+# 📤 UPLOAD DOCUMENT
+# ===================================================
+@app.post("/upload")
+async def upload_document(
+
+    file: UploadFile = File(...)
+):
+
+    save_path = (
+        DOCUMENTS_DIR / file.filename
+    )
+
+    with open(save_path, "wb") as f:
+
+        content = await file.read()
+
+        f.write(content)
+
+    logger.info(
+        f"📤 Uploaded: {file.filename}"
+    )
+
+    return {
+
+        "success": True,
+
+        "filename":
+        file.filename
     }

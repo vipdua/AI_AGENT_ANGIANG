@@ -27,6 +27,8 @@ from core.admin_panel import (
     render_admin_panel
 )
 
+import requests
+
 # ===================================================
 # ⚙️ PAGE CONFIG
 # ===================================================
@@ -307,6 +309,62 @@ with st.sidebar:
     # 📂 DOCUMENT INGEST
     # ===================================================
     st.subheader("📂 Kho tài liệu")
+
+    # ===================================================
+    # 📤 FILE UPLOAD
+    # ===================================================
+    uploaded_file = st.file_uploader(
+
+        "📤 Upload tài liệu",
+
+        type=[
+
+            "pdf",
+
+            "docx",
+
+            "txt"
+        ]
+    )
+
+    if uploaded_file:
+
+        files = {
+
+            "file": (
+
+                uploaded_file.name,
+
+                uploaded_file.getvalue()
+            )
+        }
+
+        with st.spinner(
+            "📤 Đang upload..."
+        ):
+
+            response = requests.post(
+
+                "http://localhost:8000/upload",
+
+                files=files
+            )
+
+        result = response.json()
+
+        if result["success"]:
+
+            st.success(
+
+                f"✅ Uploaded: "
+                f"{uploaded_file.name}"
+            )
+
+        else:
+
+            st.error(
+                "❌ Upload thất bại"
+            )
 
     thu_muc_nhap = st.text_input(
 

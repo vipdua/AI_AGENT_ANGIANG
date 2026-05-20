@@ -89,7 +89,7 @@ def create_search_tool( user_role):
         for doc in docs:
 
             source = doc.metadata.get(
-                "file_name",
+                "filename",
                 "Không rõ nguồn"
             )
 

@@ -34,7 +34,16 @@ class BM25Search:
     # ===================================================
     # 🔍 SEARCH
     # ===================================================
-    def search(self, query, top_k=5):
+    def search(
+
+        self,
+
+        query,
+
+        top_k=5,
+
+        department=None
+    ):
 
         tokenized_query = (
             query.lower().split()
@@ -53,11 +62,30 @@ class BM25Search:
             reverse=True
         )
 
-        top_results = ranked_results[:top_k]
+        results = []
 
-        return [
+        # ===================================================
+        # 🔒 FILTER RESULTS
+        # ===================================================
+        for doc, score in ranked_results:
 
-            result[0]
+            # ===================================================
+            # 🏢 DEPARTMENT FILTER
+            # ===================================================
+            if department:
 
-            for result in top_results
-        ]
+                if (
+                    doc.metadata.get(
+                        "department"
+                    ) != department
+                ):
+
+                    continue
+
+            results.append(doc)
+
+            if len(results) >= top_k:
+
+                break
+
+        return results

@@ -1,0 +1,18 @@
+services:
+
+  ai-agent:
+
+    build: .
+
+    container_name: ai-agent
+
+    ports:
+      - "8501:8501"
+      - "8000:8000"
+
+    volumes:
+      - .:/app
+      - D:/AI_Data/chroma_db:/app/chroma_db
+      - D:/AI_Data/logs:/app/logs
+
+    restart: unless-stopped
