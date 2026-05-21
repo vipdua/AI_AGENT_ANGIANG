@@ -1,4 +1,17 @@
+import os
+
+import logging
+
+# ===================================================
+# 🔇 SUPPRESS VERBOSE WARNINGS
+# (transformers __path__ warnings không ảnh hưởng chức năng)
+# ===================================================
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+
 from fastapi import FastAPI
+
 
 from pydantic import BaseModel
 
@@ -58,10 +71,6 @@ from slowapi.middleware import (
 
 from fastapi import Request
 
-from fastapi.responses import (
-    StreamingResponse
-)
-
 import time
 
 from fastapi import UploadFile, File
@@ -72,6 +81,30 @@ from core.config import (
 
 from utils.logger import logger
 
+from core.loaders import (
+    load_single_file
+)
+
+from core.rag import (
+    ingest_documents
+)
+
+import warnings
+
+from threading import Thread
+
+from core.folder_watcher import (
+    start_folder_watcher
+)
+
+from core.ingestion_worker import (
+    start_workers
+)
+
+from pathlib import Path
+
+warnings.filterwarnings("ignore")
+
 # ===================================================
 # 🚀 FASTAPI APP
 # ===================================================
@@ -81,6 +114,42 @@ app = FastAPI(
 
     version="1.0.0"
 )
+
+# ===================================================
+# 🚀 START BACKGROUND SERVICES
+# ===================================================
+@app.on_event("startup")
+async def startup_event():
+
+    # ===================================================
+    # 👷 START WORKERS
+    # ===================================================
+    start_workers(4)
+
+    # ===================================================
+    # 👀 START FOLDER WATCHER
+    # ===================================================
+    watch_folder = str(DOCUMENTS_DIR)
+
+    Path(watch_folder).mkdir(
+        exist_ok=True
+    )
+
+    watcher_thread = Thread(
+
+        target=start_folder_watcher,
+
+        args=(watch_folder,),
+
+        daemon=True
+    )
+
+    watcher_thread.start()
+
+    logger.info(
+        f"👀 Folder watcher started: "
+        f"{watch_folder}"
+    )
 
 # ===================================================
 # ⚡ RATE LIMITER
@@ -187,23 +256,15 @@ def login(
     }
 
 # ===================================================
-# 🌊 STREAM RESPONSE
-# ===================================================
-def stream_text(text):
-
-    for word in text.split():
-
-        yield f"data: {word} \n\n"
-
-        time.sleep(0.03)
-
-# ===================================================
 # 💬 CHAT API
 # ===================================================
 @app.post("/chat")
 @limiter.limit("20/minute")
 def chat( request: Request, data: ChatRequest, current_user=Depends( get_current_user ) ):
 
+    # ===================================================
+    # 🔒 AUTHENTICATION CHECK
+    # ===================================================
     if not current_user:
 
         return {
@@ -214,36 +275,38 @@ def chat( request: Request, data: ChatRequest, current_user=Depends( get_current
             "Unauthorized"
         }
 
-    if not require_role(
+    # ===================================================
+    # ✅ ALL AUTHENTICATED USERS CAN CHAT
+    # (admin, nhan_vien, hr, finance, etc.)
+    # ===================================================
+    try:
 
-        current_user,
+        response = ask_ai(
 
-        ["admin"]
-    ):
+            user_question=data.message,
+
+            username=data.username,
+
+            user_role=data.user_role
+        )
+
+        return {
+
+            "success": True,
+
+            "response": response
+        }
+
+    except Exception as e:
+
+        logger.error(f"❌ Chat error: {e}")
 
         return {
 
             "success": False,
 
-            "message":
-            "Forbidden"
+            "message": str(e)
         }
-
-    response = ask_ai(
-
-        user_question=data.message,
-
-        username=data.username,
-
-        user_role=data.user_role
-    )
-
-    return StreamingResponse(
-
-        stream_text(response),
-
-        media_type="text/event-stream"
-    )
 
 # ===================================================
 # 📊 SYSTEM STATS API
@@ -386,24 +449,82 @@ async def upload_document(
     file: UploadFile = File(...)
 ):
 
-    save_path = (
-        DOCUMENTS_DIR / file.filename
-    )
+    try:
 
-    with open(save_path, "wb") as f:
+        # ===================================================
+        # 📂 CREATE DIRECTORY
+        # ===================================================
+        os.makedirs(
+            DOCUMENTS_DIR,
+            exist_ok=True
+        )
 
-        content = await file.read()
+        save_path = (
+            DOCUMENTS_DIR / file.filename
+        )
 
-        f.write(content)
+        # ===================================================
+        # 💾 SAVE FILE
+        # ===================================================
+        with open(save_path, "wb") as f:
 
-    logger.info(
-        f"📤 Uploaded: {file.filename}"
-    )
+            content = await file.read()
 
-    return {
+            f.write(content)
 
-        "success": True,
+        logger.info(
+            f"📤 Uploaded: {file.filename}"
+        )
 
-        "filename":
-        file.filename
-    }
+        # ===================================================
+        # 📄 LOAD DOCUMENT
+        # ===================================================
+        docs = load_single_file(
+            save_path
+        )
+
+        logger.info(
+            f"📄 Loaded docs: {len(docs)}"
+        )
+
+        # ===================================================
+        # 🚫 NO DOCS
+        # ===================================================
+        if not docs:
+
+            return {
+
+                "success": False,
+
+                "message":
+                "Không đọc được nội dung file"
+            }
+
+        # ===================================================
+        # 🧠 INGEST
+        # ===================================================
+        ingest_documents(docs)
+
+        logger.info(
+            f"✅ Ingested: {file.filename}"
+        )
+
+        return {
+
+            "success": True,
+
+            "filename": file.filename
+        }
+
+    except Exception as e:
+
+        logger.error(
+            f"❌ Upload ingest error: {e}"
+        )
+
+        return {
+
+            "success": False,
+
+            "message": str(e)
+        }

@@ -24,7 +24,7 @@ CHROMA_DB_DIR = BASE_DIR / "chroma_db"
 # ===================================================
 # 🧠 LLM MODEL
 # ===================================================
-LLM_MODEL = "ollama/qwen2.5:7b"
+LLM_MODEL = "ollama/qwen2.5:3b"
 
 # ===================================================
 # 🧠 EMBEDDING MODEL
@@ -86,3 +86,10 @@ def create_directories():
             parents=True,
             exist_ok=True
         )
+
+import os
+
+OLLAMA_BASE_URL = os.environ.get(
+    "OLLAMA_API_BASE",
+    "http://host.docker.internal:11434"
+)

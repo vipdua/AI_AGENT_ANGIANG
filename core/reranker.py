@@ -5,70 +5,103 @@ from sentence_transformers import (
 from utils.logger import logger
 
 # ===================================================
-# 🧠 RERANK MODEL
+# 🧠 RERANK MODEL (lazy load — không load lúc import)
 # ===================================================
-rerank_model = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
+_rerank_model = None
 
-logger.info(
-    "✅ Reranker model loaded"
-)
+def get_rerank_model():
+    """
+    Lazy-load CrossEncoder để tránh crash khi startup
+    nếu model chưa được download.
+    """
+
+    global _rerank_model
+
+    if _rerank_model is None:
+
+        try:
+
+            logger.info("🧠 Loading reranker model...")
+
+            _rerank_model = CrossEncoder(
+                "cross-encoder/ms-marco-MiniLM-L-6-v2"
+            )
+
+            logger.info("✅ Reranker model loaded")
+
+        except Exception as e:
+
+            logger.error(
+                f"⚠️ Không load được reranker model: {e}"
+            )
+
+            _rerank_model = None
+
+    return _rerank_model
 
 # ===================================================
 # 🧠 RERANK DOCUMENTS
 # ===================================================
-def rerank_documents(query, documents, top_k=5):
+def rerank_documents(
+    query,
+    documents,
+    top_k=5
+):
 
     if not documents:
 
         return []
 
     # ===================================================
-    # 📄 QUERY-DOCUMENT PAIRS
+    # 🔄 THỬ RERANK, NẾU LỖI TRẢ VỀ KẾT QUẢ GỐC
     # ===================================================
-    pairs = []
+    model = get_rerank_model()
 
-    for doc in documents:
+    if model is None:
 
-        pairs.append(
-            [
-                query,
-                doc.page_content
-            ]
+        logger.warning(
+            "⚠️ Reranker không khả dụng, dùng kết quả gốc"
         )
 
-    # ===================================================
-    # 📊 PREDICT SCORES
-    # ===================================================
-    scores = rerank_model.predict(
-        pairs
-    )
+        return documents[:top_k]
 
-    # ===================================================
-    # 🔄 SORT
-    # ===================================================
-    ranked_results = sorted(
+    try:
 
-        zip(documents, scores),
+        # ===================================================
+        # 📄 QUERY-DOCUMENT PAIRS
+        # ===================================================
+        pairs = [
+            [query, doc.page_content]
+            for doc in documents
+        ]
 
-        key=lambda x: x[1],
+        # ===================================================
+        # 📊 PREDICT SCORES
+        # ===================================================
+        scores = model.predict(pairs)
 
-        reverse=True
-    )
+        # ===================================================
+        # 🔄 SORT BY SCORE
+        # ===================================================
+        ranked_results = sorted(
+            zip(documents, scores),
+            key=lambda x: x[1],
+            reverse=True
+        )
 
-    # ===================================================
-    # 📦 TOP RESULTS
-    # ===================================================
-    top_documents = [
+        top_documents = [
+            item[0]
+            for item in ranked_results[:top_k]
+        ]
 
-        item[0]
+        logger.info(
+            f"🧠 Reranked top documents: {len(top_documents)}"
+        )
 
-        for item in ranked_results[:top_k]
-    ]
+        return top_documents
 
-    logger.info(
-        f"🧠 Reranked top documents: {len(top_documents)}"
-    )
+    except Exception as e:
 
-    return top_documents
+        logger.error(f"❌ Reranker error: {e}")
+
+        return documents[:top_k]

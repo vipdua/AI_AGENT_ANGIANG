@@ -64,14 +64,14 @@ def create_vector_database(documents):
 
     embeddings = get_embedding_model()
 
-    vectorstore = Chroma.from_documents(
+    vectorstore = Chroma(
 
-        documents=documents,
+        persist_directory=str(CHROMA_DB_DIR),
 
-        embedding=embeddings,
-
-        persist_directory=str(CHROMA_DB_DIR)
+        embedding_function=embeddings
     )
+
+    vectorstore.add_documents(documents)
 
     return vectorstore
 
@@ -118,6 +118,20 @@ def ingest_documents(documents):
     # ✂️ SPLIT DOCUMENTS
     # ===================================================
     chunks = split_documents(documents)
+
+    for i, chunk in enumerate(chunks):
+
+        logger.info(
+            f"""
+    CHUNK {i}
+
+    CONTENT:
+    {chunk.page_content[:300]}
+
+    METADATA:
+    {chunk.metadata}
+    """
+        )
 
     logger.info(
         f"📦 Tổng chunk: {len(chunks)}"
@@ -171,35 +185,40 @@ def hybrid_search(
     # ===================================================
     vectorstore = load_vector_database()
 
-    search_filter = None
-
-    if user_role != "admin":
-
-        search_filter = {
-
-            "department":
-            user_role
-        }
-
     vector_results = (
         vectorstore.similarity_search(
 
             query,
 
-            k=RETRIEVAL_K,
-
-            filter=search_filter
+            k=RETRIEVAL_K
         )
     )
+
+    logger.info(f"🧠 Vector results: {len(vector_results)}")
+
+    for i, doc in enumerate(vector_results):
+
+        logger.info(
+            f"""
+    VECTOR DOC {i}
+
+    CONTENT:
+    {doc.page_content[:300]}
+
+    METADATA:
+    {doc.metadata}
+    """
+        )
 
     # ===================================================
     # 🔍 BM25 SEARCH
     # ===================================================
     keyword_results = []
-
+    logger.info(f"🔍 BM25 results: {len(keyword_results)}")
     if bm25_search_engine:
 
         keyword_results = (
+            
             bm25_search_engine.search(
 
                 query,
@@ -214,6 +233,44 @@ def hybrid_search(
                 )
             )
         )
+
+    # ===================================================
+    # 🎯 EXACT FILENAME MATCH
+    # ===================================================
+    query_lower = query.lower()
+
+    filename_matched_docs = []
+
+    for doc in (vector_results + keyword_results):
+
+        filename = (
+            doc.metadata.get(
+                "filename",
+                ""
+            )
+            .lower()
+            .replace(".txt", "")
+        )
+
+        # ===================================================
+        # 🎯 MATCH FILENAME
+        # ===================================================
+        if filename and filename in query_lower:
+
+            logger.info(
+                f"🎯 Filename matched: {filename}"
+            )
+
+            filename_matched_docs.append(doc)
+
+    # ===================================================
+    # 🚀 PRIORITY OVERRIDE
+    # ===================================================
+    if filename_matched_docs:
+
+        vector_results = filename_matched_docs
+
+        keyword_results = []
 
     # ===================================================
     # 🔄 MERGE RESULTS
@@ -243,14 +300,17 @@ def hybrid_search(
     # ===================================================
     # 🔐 FILTER PERMISSIONS
     # ===================================================
-    combined_results = (
-        filter_accessible_documents(
+    # combined_results = (
+    #     filter_accessible_documents(
 
-            user_role,
+    #         user_role,
 
-            combined_results
-        )
-    )
+    #         combined_results
+    #     )
+    # )
+
+    # TEMP DEBUG
+    combined_results = combined_results
 
     # ===================================================
     # 🧠 RERANK
@@ -269,24 +329,21 @@ def hybrid_search(
 # ===================================================
 # 🗑️ DELETE DOCUMENTS BY SOURCE
 # ===================================================
-def delete_document_by_source(
-
-    source
-):
+def delete_document_by_source(source):
 
     try:
 
-        vector_store.delete(
+        vectorstore = load_vector_database()
+
+        vectorstore.delete(
 
             where={
-
                 "source": source
             }
         )
 
         logger.info(
-            f"🗑️ Deleted old vectors: "
-            f"{source}"
+            f"🗑️ Deleted old vectors: {source}"
         )
 
     except Exception as e:

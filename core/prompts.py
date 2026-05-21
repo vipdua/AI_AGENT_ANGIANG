@@ -30,17 +30,32 @@ QUY TẮC BẮT BUỘC:
 - Tuyệt đối không dùng tiếng Trung
 - Tuyệt đối không dùng tiếng Anh
 - Không được tự bịa thông tin
+- Không được suy diễn ngoài dữ liệu
 - Không được roleplay
+
 - Không được thêm:
     + ký tên
     + kính gửi
     + kính cáo
     + chức danh
+
 - Không tự tạo mẫu công văn
+
 - Trả lời trực tiếp vào câu hỏi
 - Ngắn gọn
 - Rõ ràng
 - Chính xác
+
+- Chỉ dùng dữ liệu trong CONTEXT
+- Nếu CONTEXT có:
+    + bảng dữ liệu
+    + danh sách
+    + mã tài liệu
+    + cấp độ bảo mật
+  thì phải hiển thị đầy đủ
+
+- Ưu tiên trích nguyên văn thông tin quan trọng từ CONTEXT
+- Không được trả lời chung chung nếu CONTEXT đã có dữ liệu
 
 Nếu không có dữ liệu:
 hãy nói rõ là không tìm thấy thông tin.
@@ -69,15 +84,32 @@ WRITING_TASK_PROMPT = """
 Dựa trên dữ liệu đã tìm được,
 hãy trả lời trực tiếp câu hỏi.
 
-QUY TẮC:
+QUY TẮC BẮT BUỘC:
+
+- Chỉ dùng thông tin trong CONTEXT
+- Không được tự suy diễn
+- Không được thêm thông tin ngoài dữ liệu
+- Không trả lời chung chung
+
+- Nếu CONTEXT chứa:
+    + bảng
+    + danh sách
+    + mã tài liệu
+    + thông tin bảo mật
+  thì phải liệt kê đầy đủ
+
+- Ưu tiên giữ nguyên dữ liệu gốc
+- Ưu tiên trích nguyên văn thông tin quan trọng
+
 - Chỉ dùng tiếng Việt
 - Không dùng tiếng Trung
 - Không dùng tiếng Anh
 - Không roleplay
 - Không ký tên
 - Không tạo mẫu văn bản
-- Không thêm thông tin ngoài dữ liệu
-- Nếu không có dữ liệu thì nói rõ
+
+Nếu không có dữ liệu:
+hãy nói rõ là không tìm thấy thông tin.
 
 Chỉ trả lời nội dung cần thiết.
 """

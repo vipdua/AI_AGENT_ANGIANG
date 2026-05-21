@@ -3,6 +3,12 @@ import requests
 API_URL = "http://127.0.0.1:8000"
 
 # ===================================================
+# ⏱️ TIMEOUT CONFIG (giây)
+# ===================================================
+CHAT_TIMEOUT = 180    # AI có thể cần nhiều thời gian
+DEFAULT_TIMEOUT = 10  # Các API khác
+
+# ===================================================
 # 🔒 HANDLE API RESPONSE
 # ===================================================
 def handle_response(response):
@@ -11,14 +17,14 @@ def handle_response(response):
 
         data = response.json()
 
-    except:
+    except Exception:
 
         return {
 
             "success": False,
 
             "message":
-            "API Error"
+            "Lỗi parse response từ API"
         }
 
     return data
@@ -44,19 +50,37 @@ def api_login(
     password
 ):
 
-    response = requests.post(
+    try:
 
-        f"{API_URL}/login",
+        response = requests.post(
 
-        json={
+            f"{API_URL}/login",
 
-            "username": username,
+            json={
 
-            "password": password
+                "username": username,
+
+                "password": password
+            },
+
+            timeout=DEFAULT_TIMEOUT
+        )
+
+        return handle_response( response )
+
+    except requests.exceptions.ConnectionError:
+
+        return {
+            "success": False,
+            "message": "❌ Không thể kết nối đến API Server. Hãy kiểm tra FastAPI có đang chạy không."
         }
-    )
 
-    return handle_response( response )
+    except requests.exceptions.Timeout:
+
+        return {
+            "success": False,
+            "message": "⏱️ API Server phản hồi quá chậm (timeout)."
+        }
 
 # ===================================================
 # 💬 CHAT API
@@ -72,37 +96,67 @@ def api_chat(
     message
 ):
 
-    response = requests.post(
+    try:
 
-        f"{API_URL}/chat",
+        response = requests.post(
 
-        headers=get_headers(token),
+            f"{API_URL}/chat",
 
-        json={
+            headers=get_headers(token),
 
-            "username": username,
+            json={
 
-            "user_role": user_role,
+                "username": username,
 
-            "message": message
+                "user_role": user_role,
+
+                "message": message
+            },
+
+            timeout=CHAT_TIMEOUT
+        )
+
+        return handle_response( response )
+
+    except requests.exceptions.ConnectionError:
+
+        return {
+            "success": False,
+            "message": "❌ Không thể kết nối đến API Server. Hãy kiểm tra FastAPI có đang chạy không."
         }
-    )
 
-    return handle_response( response )
+    except requests.exceptions.Timeout:
+
+        return {
+            "success": False,
+            "message": "⏱️ AI phản hồi quá chậm (timeout 3 phút). Hãy thử lại hoặc kiểm tra Ollama."
+        }
 
 # ===================================================
 # 📊 SYSTEM STATS API
 # ===================================================
 def api_stats(token):
 
-    response = requests.get(
+    try:
 
-        f"{API_URL}/stats",
+        response = requests.get(
 
-        headers=get_headers(token)
-    )
+            f"{API_URL}/stats",
 
-    return handle_response( response )
+            headers=get_headers(token),
+
+            timeout=DEFAULT_TIMEOUT
+        )
+
+        return handle_response( response )
+
+    except (requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout):
+
+        return {
+            "success": False,
+            "message": "❌ Không thể kết nối đến API Server."
+        }
 
 # ===================================================
 # 👥 GET USERS

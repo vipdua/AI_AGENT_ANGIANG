@@ -165,7 +165,9 @@ hoạt động offline 100%.
             password
         )
 
-        if result["success"]:
+        st.write(result)
+
+        if result.get("success"):
 
             st.session_state.user = (
                 result["user"]
@@ -311,9 +313,16 @@ with st.sidebar:
     st.subheader("📂 Kho tài liệu")
 
     # ===================================================
-    # 📤 FILE UPLOAD
+    # 📤 FILE UPLOAD STATE
     # ===================================================
-    uploaded_file = st.file_uploader(
+    if "upload_done" not in st.session_state:
+
+        st.session_state.upload_done = False
+
+    # ===================================================
+    # 📤 FILE UPLOADER
+    # ===================================================
+    uploaded_files = st.file_uploader(
 
         "📤 Upload tài liệu",
 
@@ -324,47 +333,156 @@ with st.sidebar:
             "docx",
 
             "txt"
-        ]
+        ],
+
+        accept_multiple_files=True,
+
+        key="file_uploader"
     )
 
-    if uploaded_file:
+    # ===================================================
+    # 🔄 RESET UPLOAD STATE
+    # ===================================================
+    if not uploaded_files:
 
-        files = {
+        st.session_state.upload_done = False
 
-            "file": (
+    # ===================================================
+    # 🚀 HANDLE UPLOAD
+    # ===================================================
+    if (
 
-                uploaded_file.name,
+        uploaded_files
 
-                uploaded_file.getvalue()
-            )
-        }
+        and
 
-        with st.spinner(
-            "📤 Đang upload..."
+        not st.session_state.upload_done
+    ):
+
+        progress_bar = st.progress(0)
+
+        total_files = len(
+            uploaded_files
+        )
+
+        uploaded_success = 0
+
+        failed_uploads = 0
+
+        # ===================================================
+        # 📤 PROCESS FILES
+        # ===================================================
+        for index, uploaded_file in enumerate(
+
+            uploaded_files
         ):
 
-            response = requests.post(
+            files = {
 
-                "http://localhost:8000/upload",
+                "file": (
 
-                files=files
-            )
+                    uploaded_file.name,
 
-        result = response.json()
+                    uploaded_file.getvalue()
+                )
+            }
 
-        if result["success"]:
+            with st.spinner(
 
-            st.success(
-
-                f"✅ Uploaded: "
+                f"📤 Uploading: "
                 f"{uploaded_file.name}"
-            )
+            ):
 
-        else:
+                try:
 
-            st.error(
-                "❌ Upload thất bại"
-            )
+                    response = requests.post(
+
+                        "http://localhost:8000/upload",
+
+                        files=files,
+
+                        timeout=300
+                    )
+
+                    result = response.json()
+
+                    # ===================================================
+                    # ✅ SUCCESS
+                    # ===================================================
+                    if result.get("success"):
+
+                        uploaded_success += 1
+
+                        st.success(
+
+                            f"""
+    ✅ Uploaded:
+    {uploaded_file.name}
+    """
+                        )
+
+                    # ===================================================
+                    # ❌ FAILED
+                    # ===================================================
+                    else:
+
+                        failed_uploads += 1
+
+                        st.error(
+
+                            f"""
+    ❌ Failed:
+    {uploaded_file.name}
+
+    Message:
+    {result.get('message')}
+    """
+                        )
+
+                except Exception as e:
+
+                    failed_uploads += 1
+
+                    st.error(
+
+                        f"""
+    ❌ Upload Error:
+    {uploaded_file.name}
+
+    Error:
+    {str(e)}
+    """
+                    )
+
+                # ===================================================
+                # 📊 PROGRESS
+                # ===================================================
+                progress_bar.progress(
+
+                    (index + 1)
+                    / total_files
+                )
+
+        # ===================================================
+        # 🎉 FINAL STATUS
+        # ===================================================
+        st.success(
+
+            f"""
+    🎉 Upload hoàn tất!
+
+    ✅ Thành công: {uploaded_success}
+
+    ❌ Thất bại: {failed_uploads}
+    """
+        )
+
+        # ===================================================
+        # 🔒 PREVENT RE-UPLOAD LOOP
+        # ===================================================
+        st.session_state.upload_done = True
+
+        st.rerun()
 
     thu_muc_nhap = st.text_input(
 
@@ -488,7 +606,7 @@ Tôi có thể hỗ trợ tra cứu tài liệu nội bộ cho bạn.
 
             cau_hoi_dau_tien = st.text_input(
 
-                "",
+                "Câu hỏi",
 
                 placeholder=
                 "Hỏi AI nội bộ...",
@@ -660,18 +778,37 @@ else:
 
                 if not result.get("success"):
 
-                    st.stop()
+                    # =====================================================
+                    # ⚠️ Ghi lỗi vào messages để tránh vòng lặp vô tận
+                    # Không dùng st.stop() vì sẽ không append message
+                    # và lần rerun sau vẫn thấy messages[-1] = "user"
+                    # =====================================================
+                    error_msg = result.get(
+                        "message",
+                        "❌ Lỗi không xác định từ AI"
+                    )
 
-                ket_qua = result["response"]
+                    st.error(error_msg)
 
-                st.markdown(ket_qua)
+                    st.session_state.messages.append({
 
-                st.session_state.messages.append({
+                        "role": "assistant",
 
-                    "role": "assistant",
+                        "content": f"⚠️ {error_msg}"
+                    })
 
-                    "content": ket_qua
-                })
+                else:
+
+                    ket_qua = result["response"]
+
+                    st.markdown(ket_qua)
+
+                    st.session_state.messages.append({
+
+                        "role": "assistant",
+
+                        "content": ket_qua
+                    })
 
                 st.rerun()
 

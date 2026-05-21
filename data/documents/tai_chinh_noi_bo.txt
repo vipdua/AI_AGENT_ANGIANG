@@ -1,0 +1,12 @@
+DANH MỤC TÀI LIỆU TÀI CHÍNH NỘI BỘ - NĂM 2024
+------------------------------------------
+Mã tài liệu | Tên loại tài liệu             | Cấp độ bảo mật
+------------------------------------------
+TC-01       | Quy chế chi tiêu nội bộ       | Nghiêm ngặt
+TC-02       | Định mức tiếp khách & công tác| Nội bộ
+TC-03       | Quy trình tạm ứng - hoàn ứng  | Phổ thông
+TC-04       | Báo cáo dòng tiền hàng tuần   | Tuyệt mật
+TC-05       | Danh mục tài sản cố định      | Nội bộ
+------------------------------------------
+Người lập: Ban Tài Chính
+Ngày cập nhật: 20/05/2024

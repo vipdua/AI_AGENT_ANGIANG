@@ -171,15 +171,6 @@ def process_file(
                 str(file_path)
             )
 
-        process_file(
-
-            action,
-
-            file_path,
-
-            retry_count - 1
-        )
-
 # ===================================================
 # 👷 WORKER LOOP
 # ===================================================

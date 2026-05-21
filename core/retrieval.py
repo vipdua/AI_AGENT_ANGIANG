@@ -27,43 +27,26 @@ def hybrid_search(
     )
 
     # ===================================================
-    # 🔐 ROLE FILTER
+    # 🚀 DEBUG DOCS
     # ===================================================
-    filtered_docs = []
+    for i, doc in enumerate(docs):
 
-    for doc in docs:
+        logger.info(
+            f"""
+DOC {i}
 
-        department = doc.metadata.get(
+CONTENT:
+{doc.page_content[:300]}
 
-            "department",
-
-            "all"
+METADATA:
+{doc.metadata}
+"""
         )
 
-        # ===================================================
-        # 🌍 PUBLIC DOCUMENT
-        # ===================================================
-        if department == "all":
-
-            filtered_docs.append(doc)
-
-            continue
-
-        # ===================================================
-        # 👑 ADMIN ACCESS ALL
-        # ===================================================
-        if user_role == "admin":
-
-            filtered_docs.append(doc)
-
-            continue
-
-        # ===================================================
-        # 🔐 ROLE MATCH
-        # ===================================================
-        if department == user_role:
-
-            filtered_docs.append(doc)
+    # ===================================================
+    # 🚀 TEMP: SKIP RBAC FILTER
+    # ===================================================
+    filtered_docs = docs
 
     logger.info(
         f"🔐 Accessible docs: "

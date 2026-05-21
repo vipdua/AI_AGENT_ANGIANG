@@ -3,13 +3,19 @@
 # ===================================================
 def format_sources(documents):
 
+    if not documents:
+        return ""
+
     sources = set()
 
     for doc in documents:
 
-        file_name = doc.metadata.get(
-            "file_name",
-            "Không rõ nguồn"
+        # Hỗ trợ cả hai key "filename" và "file_name"
+        file_name = (
+            doc.metadata.get("filename")
+            or doc.metadata.get("file_name")
+            or doc.metadata.get("source")
+            or "Không rõ nguồn"
         )
 
         sources.add(file_name)
@@ -18,7 +24,7 @@ def format_sources(documents):
 
         return ""
 
-    result = "\n\n📄 Nguồn tham khảo:\n"
+    result = "\n\n📄 **Nguồn tham khảo:**\n"
 
     for source in sorted(sources):
 

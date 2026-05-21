@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from importlib_metadata import metadata
-
 from utils.logger import logger
 
 from utils.metadata import (
@@ -122,6 +120,18 @@ def load_single_file(file_path):
             detect_department(
                 file_path.name
             )
+        )
+
+        logger.info(
+            f"""
+        📄 FILE METADATA
+
+        FILE:
+        {file_path.name}
+
+        METADATA:
+        {metadata}
+        """
         )
 
         # ===================================================

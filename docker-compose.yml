@@ -10,9 +10,24 @@ services:
       - "8501:8501"
       - "8000:8000"
 
+    environment:
+      - OLLAMA_API_BASE=http://host.docker.internal:11434
+      # Ngăn Python tạo __pycache__ trong container (tránh WatchFiles loop)
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      # Chỉ định cache HuggingFace
+      - HF_HOME=/app/hf_cache
+      - TRANSFORMERS_CACHE=/app/hf_cache
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     volumes:
       - .:/app
       - D:/AI_Data/chroma_db:/app/chroma_db
       - D:/AI_Data/logs:/app/logs
+      # Cache HuggingFace models ra ngoài container
+      # → không phải download lại khi rebuild
+      - D:/AI_Data/hf_cache:/app/hf_cache
 
     restart: unless-stopped
